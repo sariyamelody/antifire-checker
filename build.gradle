@@ -37,7 +37,8 @@ tasks.withType(JavaCompile).configureEach {
 tasks.register('shadowJar', Jar) {
 	dependsOn configurations.testRuntimeClasspath
 	manifest {
-		attributes('Main-Class': 'garden.sariya.antifirechecker.AntifireCheckerPluginTest', 'Multi-Release': true)
+		attributes('Main-Class': 'garden.sariya.antifirechecker.AntifireCheckerPluginTest',
+				'Multi-Release': true)
 	}
 
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE

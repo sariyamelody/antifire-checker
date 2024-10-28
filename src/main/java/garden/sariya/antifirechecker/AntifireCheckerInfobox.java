@@ -13,6 +13,9 @@ public class AntifireCheckerInfobox extends InfoBox
     @Getter
     @Setter
     private int timer = -1;
+    private int threshold = 25;
+    @Setter
+    private String debugInfo = "";
 
     public AntifireCheckerInfobox(Plugin plugin)
     {
@@ -26,15 +29,21 @@ public class AntifireCheckerInfobox extends InfoBox
         return Integer.toString(timer + 1);
     }
 
+    public void setThreshold(int t)
+    {
+        threshold = t;
+    }
+
     @Override
     public Color getTextColor()
     {
-        return timer < 100 ? Color.RED : Color.WHITE;
+        return timer < threshold ? Color.RED : Color.WHITE;
     }
 
     @Override
     public String getTooltip()
     {
-        return "Antifire Checker Status";
+
+        return String.format("remaining ticks of antifire effect (will start warning below %d)", threshold);
     }
 }

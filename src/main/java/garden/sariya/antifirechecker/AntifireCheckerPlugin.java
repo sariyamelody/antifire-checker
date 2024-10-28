@@ -25,6 +25,32 @@ import java.util.Arrays;
 public class AntifireCheckerPlugin extends Plugin
 {
 	private static final int NO_ANTIFIRE = -1;
+	private static final String[] NAMES_OF_DRAGONS_WHICH_NEED_ANTIFIRE = new String[]{
+			// Metallics
+			"Bronze dragon",
+			"Iron dragon",
+			"Steel dragon",
+			"Mithril dragon",
+			"Adamant dragon",
+			"Rune dragon",
+			// Chromatics
+			"Green dragon",
+			"Brutal green dragon",
+			"Blue dragon",
+			"Brutal blue dragon",
+			"Red dragon",
+			"Brutal red dragon",
+			"Black dragon",
+			"Brutal black dragon",
+			// Technically not a chromatic, but shares mechanics
+			"Lava dragon",
+			"Reanimated dragon",
+			// Bosses
+			"Elvarg",
+			"Vorkath",
+			"King Black Dragon",
+			"Galvek"
+	};
 
 	@Inject
 	private Client client;
@@ -47,7 +73,10 @@ public class AntifireCheckerPlugin extends Plugin
 	private Notifier notifier;
 
 	@Inject
-	private AntifireCheckerOverlay overlay;
+	private AntifireCheckerTextOverlay textOverlay;
+
+	@Inject
+	private AntifireCheckerWarningOverlay warningOverlay;
 
 	private int totalAntifireTicksLeft = NO_ANTIFIRE;
 	// -1 = none
@@ -77,23 +106,23 @@ public class AntifireCheckerPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		this.infoBoxManager.removeInfoBox(this.infoBox);
-		this.overlayManager.remove(this.overlay);
+		this.overlayManager.remove(this.textOverlay);
 	}
 
 	@Subscribe
 	protected void onGameTick(GameTick tick)
 	{
 		--this.totalAntifireTicksLeft;
+		updateOverlays();
 		updateInfoBox();
 	}
 
 	@Subscribe
 	protected void onVarbitChanged(VarbitChanged change)
 	{
-		log.info("new varbit change {}", change);
 		if (Arrays.stream(AntifireEvents).anyMatch(changedVarbitId -> changedVarbitId == change.getVarbitId()))
 		{
-			log.info("found varbit change we care about, vid: {}, vval: {}", change.getVarbitId(), change.getValue());
+			log.debug("found varbit change we care about, vid: {}, vval: {}", change.getVarbitId(), change.getValue());
 			int value = change.getValue();
 			if (change.getVarbitId() == Varbits.SUPER_ANTIFIRE) {
 				this.antifireType = 2;
@@ -113,7 +142,7 @@ public class AntifireCheckerPlugin extends Plugin
 	@Subscribe
 	protected void onConfigChanged(ConfigChanged event)
 	{
-		this.updateOverlay();
+		this.updateOverlays();
 		this.updateInfoBox();
 	}
 
@@ -124,7 +153,7 @@ public class AntifireCheckerPlugin extends Plugin
 
 	private void onAntifirePotionExpired()
 	{
-		this.updateOverlay();
+		this.updateOverlays();
 		if (config.getNotification().isEnabled())
 		{
 			notifier.notify(config.getNotification(), "Your antifire potion has expired");
@@ -145,17 +174,68 @@ public class AntifireCheckerPlugin extends Plugin
         }
 	}
 
-	private void updateOverlay()
+	private void updateOverlays()
 	{
-		if (!this.isAntifireActive()  || !config.reminderEnabled())
+		updateWarningOverlay();
+		updateTextOverlay();
+	}
+
+	private boolean textOverlayDesired()
+	{
+		if (config.onlyDrawWarningWithDragonsAround())
 		{
-			this.overlayManager.remove(this.overlay);
-			return;
+			return config.enableTextOverlay() && isNearDragons() && isAntifireNearExpiry();
 		}
-		if (!this.overlayManager.anyMatch(o -> o instanceof AntifireCheckerOverlay))
+		return config.enableTextOverlay() && isAntifireNearExpiry();
+	}
+	private void updateTextOverlay()
+	{
+		if (this.textOverlayDesired())
 		{
-			this.overlayManager.add(this.overlay);
+			if (!this.overlayManager.anyMatch(o -> o instanceof AntifireCheckerTextOverlay))
+			{
+				this.overlayManager.add(this.textOverlay);
+			}
+		} else {
+			this.overlayManager.remove(this.textOverlay);
 		}
+	}
+
+	private boolean warningOverlayDesired()
+	{
+		if (config.onlyDrawWarningWithDragonsAround())
+		{
+			return config.enableWarningOverlay() && isNearDragons() && isAntifireNearExpiry();
+		}
+		return config.enableWarningOverlay() && isAntifireNearExpiry();
+	}
+
+	private void updateWarningOverlay()
+	{
+		if (this.warningOverlayDesired())
+		{
+			if (!this.overlayManager.anyMatch(o -> o instanceof AntifireCheckerWarningOverlay))
+			{
+				this.overlayManager.add(this.warningOverlay);
+			}
+		} else {
+			this.overlayManager.remove(this.warningOverlay);
+		}
+	}
+
+	private boolean isAntifireNearExpiry()
+	{
+		return (totalAntifireTicksLeft < config.minimumRemainingAntifireTicks());
+	}
+
+	private boolean isNearDragons()
+	{
+		var worldView = this.client.getTopLevelWorldView();
+		for (var npc : worldView.npcs()) {
+			if (Arrays.stream(NAMES_OF_DRAGONS_WHICH_NEED_ANTIFIRE).anyMatch(dragonName -> dragonName.equals(npc.getName())))
+				return true;
+		}
+		return false;
 	}
 
 	private void updateInfoBox()

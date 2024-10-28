@@ -22,6 +22,11 @@ public interface AntifireCheckerConfig extends Config
 	position = 3)
 	String locationSection = "locationSection";
 
+	@ConfigSection(name = "Overlays",
+			description = "Configuration for overlays",
+			position = 4)
+	String overlaySection = "overlaySection";
+
 	@ConfigItem(
 			keyName = "reminderEnabled",
 			name = "Enable reminder panel",
@@ -83,4 +88,44 @@ public interface AntifireCheckerConfig extends Config
 		// Wouldn't want our users to get smoked because they were across the room.
 		return 25;
 	}
+
+	@ConfigItem(
+			keyName = "enableWarningOverlay",
+			name = "Enable warning overlay",
+			description = "Enable a big blinky flashing red overlay when you're almost out of antifire ticks.",
+			section = overlaySection
+	)
+	default boolean enableWarningOverlay() { return true; }
+
+	@ConfigItem(
+			keyName = "enableTextOverlay",
+			name = "Enable text overlay",
+			description = "Enable a little textual overlay when you're almost out of antifire ticks.",
+			section = overlaySection
+	)
+	default boolean enableTextOverlay() { return false; }
+
+
+	@ConfigItem(
+			keyName = "onlyDrawWarningWithDragonsAround",
+			name = "Only draw warning/text overlays near dragons",
+			description = "Only draw warning overlay when dragons requiring antifire potions are nearby.",
+			section = overlaySection
+	)
+	default boolean onlyDrawWarningWithDragonsAround() { return true; }
+
+	@Alpha
+	@ConfigItem(
+			keyName = "warningColor",
+			name = "Warning Color",
+			description = "The color to use for the warning overlay.",
+			section = overlaySection
+	)
+	default Color warningColor()
+	{
+		// same color as antifire potion
+		return new Color(121, 18, 157, 150);
+	}
+
+
 }

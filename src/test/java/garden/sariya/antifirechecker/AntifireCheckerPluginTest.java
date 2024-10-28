@@ -1,13 +1,13 @@
-package com.example;
+package garden.sariya.antifirechecker;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class ExamplePluginTest
+public class AntifireCheckerPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(ExamplePlugin.class);
+		ExternalPluginManager.loadBuiltin(AntifireCheckerPlugin.class);
 		RuneLite.main(args);
 	}
 }
